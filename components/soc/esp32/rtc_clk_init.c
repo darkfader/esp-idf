@@ -132,7 +132,9 @@ void rtc_clk_init(rtc_clk_config_t cfg)
 
     /* Slow & fast clocks setup */
     if (cfg.slow_freq == RTC_SLOW_FREQ_32K_XTAL) {
-        rtc_clk_32k_enable(true);
+        if (!rtc_clk_32k_enabled()) {
+            rtc_clk_32k_enable(true);
+        }
     }
     if (cfg.fast_freq == RTC_FAST_FREQ_8M) {
         bool need_8md256 = cfg.slow_freq == RTC_SLOW_FREQ_8MD256;

@@ -110,7 +110,9 @@ void esp_clk_init(void)
 #elif defined(CONFIG_ESP32_RTC_CLOCK_SOURCE_INTERNAL_8MD256)
     select_rtc_slow_clk(SLOW_CLK_8MD256);
 #else
-    select_rtc_slow_clk(RTC_SLOW_FREQ_RTC);
+    if (!rtc_clk_32k_enabled()) {
+        select_rtc_slow_clk(RTC_SLOW_FREQ_RTC);
+    }
 #endif
 
 #ifdef CONFIG_BOOTLOADER_WDT_ENABLE
