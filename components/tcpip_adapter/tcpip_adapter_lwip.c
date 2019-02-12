@@ -502,7 +502,11 @@ esp_err_t tcpip_adapter_create_ip6_linklocal(tcpip_adapter_if_t tcpip_if)
     p_netif = esp_netif[tcpip_if];
     if (p_netif != NULL && netif_is_up(p_netif)) {
         netif_create_ip6_linklocal_address(p_netif, 1);
-        nd6_set_cb(p_netif, tcpip_adapter_nd6_cb);
+        #if LWIP_IPV6_DUP_DETECT_ATTEMPTS > 0
+            nd6_set_cb(p_netif, tcpip_adapter_nd6_cb);
+        #else
+            tcpip_adapter_nd6_cb(p_netif, tcpip_if);
+        #endif
 
         return ESP_OK;
     } else {
