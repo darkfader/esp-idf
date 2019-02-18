@@ -110,9 +110,7 @@ void esp_clk_init(void)
 #elif defined(CONFIG_ESP32_RTC_CLOCK_SOURCE_INTERNAL_8MD256)
     select_rtc_slow_clk(SLOW_CLK_8MD256);
 #else
-    if (!rtc_clk_32k_enabled()) {
-        select_rtc_slow_clk(RTC_SLOW_FREQ_RTC);
-    }
+    select_rtc_slow_clk(RTC_SLOW_FREQ_RTC);
 #endif
 
 #ifdef CONFIG_BOOTLOADER_WDT_ENABLE
@@ -171,25 +169,27 @@ static void select_rtc_slow_clk(slow_clk_sel_t slow_clk)
     uint32_t cal_val = 0;
     do {
         if (rtc_slow_freq == RTC_SLOW_FREQ_32K_XTAL) {
-            /* 32k XTAL oscillator needs to be enabled and running before it can
-             * be used. Hardware doesn't have a direct way of checking if the
-             * oscillator is running. Here we use rtc_clk_cal function to count
-             * the number of main XTAL cycles in the given number of 32k XTAL
-             * oscillator cycles. If the 32k XTAL has not started up, calibration
-             * will time out, returning 0.
-             */
-            ESP_EARLY_LOGD(TAG, "waiting for 32k oscillator to start up");
-            if (slow_clk == SLOW_CLK_32K_XTAL) {
-                rtc_clk_32k_enable(true);
-            } else if (slow_clk == SLOW_CLK_32K_EXT_OSC) {
-                rtc_clk_32k_enable_external();
-            }
-            // When SLOW_CLK_CAL_CYCLES is set to 0, clock calibration will not be performed at startup.
-            if (SLOW_CLK_CAL_CYCLES > 0) {
-                cal_val = rtc_clk_cal(RTC_CAL_32K_XTAL, SLOW_CLK_CAL_CYCLES);
-                if (cal_val == 0 || cal_val < 15000000L) {
-                    ESP_EARLY_LOGW(TAG, "32 kHz XTAL not found, switching to internal 150 kHz oscillator");
-                    rtc_slow_freq = RTC_SLOW_FREQ_RTC;
+            if (!rtc_clk_32k_enabled()) {
+                /* 32k XTAL oscillator needs to be enabled and running before it can
+                * be used. Hardware doesn't have a direct way of checking if the
+                * oscillator is running. Here we use rtc_clk_cal function to count
+                * the number of main XTAL cycles in the given number of 32k XTAL
+                * oscillator cycles. If the 32k XTAL has not started up, calibration
+                * will time out, returning 0.
+                */
+                ESP_EARLY_LOGD(TAG, "waiting for 32k oscillator to start up");
+                if (slow_clk == SLOW_CLK_32K_XTAL) {
+                    rtc_clk_32k_enable(true);
+                } else if (slow_clk == SLOW_CLK_32K_EXT_OSC) {
+                    rtc_clk_32k_enable_external();
+                }
+                // When SLOW_CLK_CAL_CYCLES is set to 0, clock calibration will not be performed at startup.
+                if (SLOW_CLK_CAL_CYCLES > 0) {
+                    cal_val = rtc_clk_cal(RTC_CAL_32K_XTAL, SLOW_CLK_CAL_CYCLES);
+                    if (cal_val == 0 || cal_val < 15000000L) {
+                        ESP_EARLY_LOGW(TAG, "32 kHz XTAL not found, switching to internal 150 kHz oscillator");
+                        rtc_slow_freq = RTC_SLOW_FREQ_RTC;
+                    }
                 }
             }
         } else if (rtc_slow_freq == RTC_SLOW_FREQ_8MD256) {
